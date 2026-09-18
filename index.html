@@ -3,59 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Панель Тохи</title>
+    <title>Dota Draft Tester</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
-            margin: 0;
-            padding: 8px 12px;
-            background-color: var(--tg-theme-bg-color, #ffffff);
-            color: var(--tg-theme-text-color, #000000);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #121212;
+            color: white;
+            font-family: sans-serif;
+            padding: 15px;
             display: flex;
-            justify-content: space-around;
+            flex-direction: column;
             align-items: center;
-            height: 100vh;
+        }
+        h2 { color: #f1c40f; margin-bottom: 10px; }
+        .box {
+            background: #1e1e1e;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 15px;
             box-sizing: border-box;
-            overflow: hidden;
         }
-        .btn {
-            background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
+        button {
+            background: #2ecc71;
+            color: white;
             border: none;
-            border-radius: 12px;
-            width: 60px;
-            height: 44px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 22px;
+            padding: 12px;
+            width: 100%;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
             cursor: pointer;
-            transition: transform 0.1s ease, background-color 0.1s ease;
+            margin-top: 10px;
         }
-        .btn:active {
-            transform: scale(0.92);
-            background-color: var(--tg-theme-button-color, #2481cc);
+        button:active { background: #27ae60; }
+        input {
+            width: 100%;
+            padding: 10px;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: white;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin-top: 5px;
+            margin-bottom: 10px;
+        }
+        pre {
+            background: #000;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            overflow-x: auto;
+            color: #2ecc71;
+            max-height: 200px;
         }
     </style>
 </head>
 <body>
 
-    <button class="btn" id="btn1" title="Джойстик">🎮</button>
-    <button class="btn" id="btn2" title="Графік">📊</button>
-    <button class="btn" id="btn3" title="Кубок">🏆</button>
+    <h2>🧪 Тестування бекенду драфту</h2>
+
+    <div class="box">
+        <label for="server-url">URL Бекенду (транслятора):</label>
+        <input type="text" id="server-url" value="http://localhost:5001/api/calculate_draft">
+        
+        <button onclick="testDraftRequest()">Імітувати вибір 10 героїв і надіслати</button>
+    </div>
+
+    <div class="box">
+        <h3>Лог подій / Відповідь сервера:</h3>
+        <pre id="log-output">Очікування дії...</pre>
+    </div>
 
     <script>
-        Telegram.WebApp.ready();
-        Telegram.WebApp.expand();
+        let tg = window.Telegram?.WebApp;
+        if (tg) tg.expand();
 
-        function sendAction(actionName) {
-            // Відправляємо дані назад у бот
-            Telegram.WebApp.sendData(actionName);
+        function log(text) {
+            const pre = document.getElementById('log-output');
+            pre.textContent += '\n' + text;
+            pre.scrollTop = pre.scrollHeight;
+            console.log(text);
         }
 
-        document.getElementById('btn1').addEventListener('click', () => sendAction('joy'));
-        document.getElementById('btn2').addEventListener('click', () => sendAction('chart'));
-        document.getElementById('btn3').addEventListener('click', () => sendAction('cup'));
+        async function testDraftRequest() {
+            const url = document.getElementById('server-url').value;
+            
+            // Імітуємо повний склад 10 героїв (як у реальному драфті)
+            const sampleData = {
+                radiant: ["Axe", "Crystal_Maiden", "Juggernaut", "Pudge", "Sniper"],
+                dire: ["Invoker", "Anti-Mage", "Lion", "Phantom_Assassin", "Zeus"]
+            };
+
+            log(`\n📤 Надсилання POST запиту на: ${url}`);
+            log(`📦 Дані: ${JSON.stringify(sampleData)}`);
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json' 
+                    },
+                    body: JSON.stringify(sampleData)
+                });
+
+                log(`📥 Статус відповіді: ${response.status} ${response.statusText}`);
+
+                const result = await response.json();
+                log(`✅ Успішна відповідь сервера:\n` + JSON.stringify(result, null, 2));
+
+            } catch (error) {
+                log(`❌ Помилка з'єднання: ${error.message}`);
+                console.error(error);
+            }
+        }
     </script>
 </body>
 </html>
